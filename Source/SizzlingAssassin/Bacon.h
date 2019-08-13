@@ -37,11 +37,15 @@ public:
 	void MoveY(float AxisValue);
 
 private:
-	// Camera component for player controlled bacon
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Bacon", meta = (AllowPrivateAccess = "true"))
-	UCameraComponent* Camera;
+	//// Camera component for player controlled bacon
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Bacon", meta = (AllowPrivateAccess = "true"))
+	//UCameraComponent* Camera;
 
-	// Spring arm component to hold up camera
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Bacon", meta = (AllowPrivateAccess = "true"))
-	USpringArmComponent* SpringArm;
+	//// Spring arm component to hold up camera
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Bacon", meta = (AllowPrivateAccess = "true"))
+	//USpringArmComponent* SpringArm;
+
+	// Degrees of yaw rotated per tick
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bacon", meta = (AllowPrivateAccess = "true"))
+	float YawRotSpeed;
 };
