@@ -1,0 +1,28 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Engine/TriggerVolume.h"
+#include "HealingSpace.generated.h"
+
+/**
+ * 
+ */
+UCLASS()
+class SIZZLINGASSASSIN_API AHealingSpace : public ATriggerVolume
+{
+	GENERATED_BODY()
+
+protected:
+	virtual void BeginPlay() override;
+
+public:
+	AHealingSpace();
+
+	UFUNCTION()
+	void OnOverlapBegin(class AActor* OverlappedActor, class AActor* OtherActor);
+
+	UFUNCTION()
+	void OnOverlapEnd(class AActor* OverlappedActor, class AActor* OtherActor);
+};

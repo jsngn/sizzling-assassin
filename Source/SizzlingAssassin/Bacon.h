@@ -36,16 +36,58 @@ public:
 	UFUNCTION()
 	void MoveY(float AxisValue);
 
-private:
-	//// Camera component for player controlled bacon
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Bacon", meta = (AllowPrivateAccess = "true"))
-	//UCameraComponent* Camera;
+	// Full health
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grease")
+	int FullGrease;
+	
+	// For calculation for HUD
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Grease")
+	int CurrentGrease;
 
-	//// Spring arm component to hold up camera
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Bacon", meta = (AllowPrivateAccess = "true"))
-	//USpringArmComponent* SpringArm;
+	// For HUD
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Grease")
+	float GreasePercentage;
 
-	// Degrees of yaw rotated per tick
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bacon", meta = (AllowPrivateAccess = "true"))
-	float YawRotSpeed;
+	// For HUD
+	UFUNCTION(BlueprintPure, Category = "Grease")
+	FText GetFullGreaseText();
+
+	// For HUD
+	UFUNCTION(BlueprintPure, Category = "Grease")
+	FText GetCurrentGreaseText();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Grease")
+	bool bIsHealing;
+
+protected:
+	// Dummy gun socket to attach grease gun child actor
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Gun")
+	USceneComponent* GunSocket;
+
+	// Grease gun component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Gun")
+	UChildActorComponent* ChildGun;
+
+	// Dummy bullet socket where grease bullets spawn/line trace starts
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Gun")
+	USceneComponent* BulletSocket;
+
+	// PLEASE CALL PARENT FUNCTION AFTER BP IMPLEMENTATION
+	UFUNCTION(BlueprintNativeEvent, Category = "Gun")
+	void OnFire();
+
+	// PLEASE CALL PARENT FUNCTION AFTER BP IMPLEMENTATION
+	UFUNCTION(BlueprintNativeEvent, Category = "Gun")
+	void Reload();
+
+	// How far (maximum) can grease ammo travel
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gun")
+	float ShootRange;
+
+	UFUNCTION(BlueprintNativeEvent, Category = "Grease")
+	void Heal();
+
+	// Grease healed per tick while in sunlight
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grease")
+	int HealRate;
 };
