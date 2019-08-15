@@ -16,18 +16,22 @@ void AHealingSpace::BeginPlay() {
 	DrawDebugBox(GetWorld(), GetActorLocation(), GetActorScale() * 100, FColor::Turquoise, true, -1, 0, 5);
 }
 
+// Handles bacon walking into sunlight area
 void AHealingSpace::OnOverlapBegin(class AActor* OverlappedActor, class AActor* OtherActor) {
 	if (OtherActor && (OtherActor != this)) {
 		if (ABacon* Bacon = Cast<ABacon>(OtherActor)) {
 			Bacon->bIsHealing = true;
+			Bacon->bIsTimerSet = true;
 		}
 	}
 }
 
+// Handles bacon leaving sunlight area
 void AHealingSpace::OnOverlapEnd(class AActor* OverlappedActor, class AActor* OtherActor) {
 	if (OtherActor && (OtherActor != this)) {
 		if (ABacon * Bacon = Cast<ABacon>(OtherActor)) {
 			Bacon->bIsHealing = false;
+			Bacon->bIsTimerSet = false;
 		}
 	}
 }

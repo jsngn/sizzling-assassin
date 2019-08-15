@@ -56,8 +56,13 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Grease")
 	FText GetCurrentGreaseText();
 
+	// Indicates whether bacon should still be healed
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Grease")
 	bool bIsHealing;
+
+	// Indicates whether timer for healing has been set once when bacon first steps into sunlight
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Grease")
+	bool bIsTimerSet;
 
 protected:
 	// Dummy gun socket to attach grease gun child actor
@@ -84,10 +89,26 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gun")
 	float ShootRange;
 
+	// Handles healing in sunlight; PLEASE CALL PARENT FUNCTION AFTER BP IMPLEMENTATION
 	UFUNCTION(BlueprintNativeEvent, Category = "Grease")
 	void Heal();
 
-	// Grease healed per tick while in sunlight
+	// Dummy timer handle
+	FTimerHandle HealTimer;
+
+	// Time interval between each heal action
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grease")
+	float HealDelayTime;
+
+	// Grease healed per heal action while in sunlight
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grease")
 	int HealRate;
+
+	// Class of the grease drop that spawns when did not shoot at enemy
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Gun")
+	TSubclassOf<class AGreaseDrop> GreaseBullet;
+
+	// Spawns grease bullet on ground if line trace misses enemy
+	UFUNCTION()
+	void DropGrease(FVector SpawnLoc);
 };

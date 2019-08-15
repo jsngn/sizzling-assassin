@@ -24,7 +24,7 @@ void AGreaseGun::BeginPlay()
 void AGreaseGun::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	UE_LOG(LogTemp, Warning, TEXT("Ammo: %i"), CurrentAmmo);
+	//UE_LOG(LogTemp, Warning, TEXT("Ammo: %i"), CurrentAmmo);
 }
 
 FText AGreaseGun::GetFullAmmoText() {

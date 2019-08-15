@@ -7,6 +7,9 @@
 #include "Engine.h"
 #include "DrawDebugHelpers.h"
 #include "GreaseGun.h"
+#include "TimerManager.h"
+#include "GreaseDrop.h"
+#include "Enemy.h"
 
 // Sets default values
 ABacon::ABacon()
@@ -34,7 +37,9 @@ void ABacon::BeginPlay()
 	CurrentGrease = FullGrease;
 	GreasePercentage = float(CurrentGrease) / float(FullGrease);
 
+	// False so bacon doesn't heal on spawn
 	bIsHealing = false;
+	bIsTimerSet = false;
 }
 
 // Called every frame
@@ -51,7 +56,7 @@ void ABacon::Tick(float DeltaTime)
 		// Get rotation of bacon in world
 		FRotator CurrentBaconRot = GetActorRotation();
 
-		// Calculate new rotation by substituting cursor's yaw into old bacon rotation
+		// Calculate new rotation by substituting cursor's yaw & pitch into old bacon rotation
 		FRotator NewBaconRot = FRotator(CurrentBaconRot.Pitch, CurrentMouseRot.Yaw, CurrentBaconRot.Roll);
 
 		SetActorRotation(NewBaconRot);
@@ -62,11 +67,13 @@ void ABacon::Tick(float DeltaTime)
 		FVector2D ViewportCenter = FVector2D(ViewportSize.X / 2, ViewportSize.Y / 2);
 		PlayerController->SetMouseLocation(ViewportCenter.X, ViewportCenter.Y);
 	}
-
-	if (bIsHealing && CurrentGrease < FullGrease) {
+	
+	// Passes when enter sunlight area
+	if (bIsHealing && bIsTimerSet && CurrentGrease < FullGrease) {
 		Heal();
+		bIsTimerSet = false; // Heal has a timer to repeat itself if applicable, so call only once
 	}
-	UE_LOG(LogTemp, Warning, TEXT("Health: %i"), CurrentGrease);
+	//UE_LOG(LogTemp, Warning, TEXT("Health: %i"), CurrentGrease);
 }
 
 // Called to bind functionality to input
@@ -135,19 +142,27 @@ void ABacon::OnFire_Implementation() {
 
 				DrawDebugLine(GetWorld(), Start, End, FColor::Green, true);
 
-				if (GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, CollisionParams))
-				{
-					if (OutHit.bBlockingHit)
-					{
+				if (GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, CollisionParams)) {
+					if (OutHit.bBlockingHit) {
 						GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("You are hitting: %s"), *OutHit.GetActor()->GetName()));
 						GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Impact Point: %s"), *OutHit.ImpactPoint.ToString()));
 						GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, FString::Printf(TEXT("Normal Point: %s"), *OutHit.ImpactNormal.ToString()));
+
+						if (AEnemy* HitEnemy = Cast<AEnemy>(OutHit.GetActor())) {
+							UE_LOG(LogTemp, Warning, TEXT("Do damage"));
+							GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("You are hitting component: %s"), *OutHit.GetComponent()->GetName()));
+						}
+						else {
+							DropGrease(OutHit.ImpactPoint); // Drop grease bullet where line trace hit, if hits anything
+						}
 					}
+				}
+				else {
+					DropGrease(End); // Drop grease at max range of line trace if hits nothing
 				}
 			}
 		}
 	}
-
 }
 
 void ABacon::Reload_Implementation() {
@@ -174,10 +189,20 @@ void ABacon::Reload_Implementation() {
 }
 
 void ABacon::Heal_Implementation() {
-	if ((CurrentGrease + HealRate) <= FullGrease) {
-		CurrentGrease += HealRate;
+	if (bIsHealing) { // Once bacon steps out of sunlight area, stop calling this function on a timer
+		if ((CurrentGrease + HealRate) <= FullGrease) {
+			CurrentGrease += HealRate;
+			GetWorldTimerManager().SetTimer(HealTimer, this, &ABacon::Heal, HealDelayTime, false); // Slowly recharges grease rather than instantaneous
+		}
+		else {
+			CurrentGrease = FullGrease;
+		}
 	}
-	else {
-		CurrentGrease = FullGrease;
-	}
+}
+
+void ABacon::DropGrease(FVector SpawnLoc) {
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	SpawnParams.Instigator = Instigator;
+	GetWorld()->SpawnActor<AGreaseDrop>(GreaseBullet, SpawnLoc, GetActorRotation(), SpawnParams);
 }
