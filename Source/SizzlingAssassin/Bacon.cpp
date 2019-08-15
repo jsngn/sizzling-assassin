@@ -151,6 +151,7 @@ void ABacon::OnFire_Implementation() {
 						if (AEnemy* HitEnemy = Cast<AEnemy>(OutHit.GetActor())) {
 							UE_LOG(LogTemp, Warning, TEXT("Do damage"));
 							GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("You are hitting component: %s"), *OutHit.GetComponent()->GetName()));
+							HitEnemy->Attacked(OutHit.GetComponent());
 						}
 						else {
 							DropGrease(OutHit.ImpactPoint); // Drop grease bullet where line trace hit, if hits anything

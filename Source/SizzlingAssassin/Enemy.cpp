@@ -45,3 +45,12 @@ void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 }
+
+void AEnemy::Attacked(UPrimitiveComponent* HitComponent) {
+	if (HitComponent == NormalHitBox) {
+		UE_LOG(LogTemp, Warning, TEXT("Normal hit"));
+	}
+	else if (HitComponent == CritHitBox) {
+		UE_LOG(LogTemp, Warning, TEXT("Crit hit"));
+	}
+}

@@ -32,6 +32,9 @@ public:
 	UFUNCTION(BlueprintNativeEvent, Category = "Damage")
 	void OnNormalHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);*/
 
+	UFUNCTION()
+	void Attacked(UPrimitiveComponent* HitComponent);
+
 protected:
 	// Collision box for handling critical hits
 	UPROPERTY(VisibleAnywhere)
