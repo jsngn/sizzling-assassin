@@ -30,6 +30,8 @@ void AEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	CurrentHealth = FullHealth;
+	HealthPercentage = float(CurrentHealth) / float(FullHealth);
 }
 
 // Called every frame
@@ -49,8 +51,20 @@ void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void AEnemy::Attacked(UPrimitiveComponent* HitComponent) {
 	if (HitComponent == NormalHitBox) {
 		UE_LOG(LogTemp, Warning, TEXT("Normal hit"));
+		CurrentHealth -= NormalDamage;
+		UE_LOG(LogTemp, Warning, TEXT("Health: %f"), CurrentHealth);
 	}
 	else if (HitComponent == CritHitBox) {
 		UE_LOG(LogTemp, Warning, TEXT("Crit hit"));
+		CurrentHealth -= CritDamage;
+		UE_LOG(LogTemp, Warning, TEXT("Health: %f"), CurrentHealth);
 	}
+
+	if (CurrentHealth <= 0.0f) {
+		Death();
+	}
+}
+
+void AEnemy::Death_Implementation() {
+	Destroy();
 }

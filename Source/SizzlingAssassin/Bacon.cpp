@@ -10,6 +10,8 @@
 #include "TimerManager.h"
 #include "GreaseDrop.h"
 #include "Enemy.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 
 // Sets default values
 ABacon::ABacon()
@@ -26,6 +28,13 @@ ABacon::ABacon()
 	// Create bullet socket
 	BulletSocket = CreateDefaultSubobject<USceneComponent>(TEXT("BulletSocket"));
 	BulletSocket->AttachToComponent(ChildGun, FAttachmentTransformRules::KeepRelativeTransform);
+
+	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
+	SpringArm->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	Camera->AttachToComponent(SpringArm, FAttachmentTransformRules::KeepRelativeTransform, USpringArmComponent::SocketName);
+
 }
 
 // Called when the game starts or when spawned
@@ -49,7 +58,7 @@ void ABacon::Tick(float DeltaTime)
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController())) {
 		// Calculate rotation of cursor in world
-		FVector CurrentMouseLoc, CurrentMouseDirection; // Location is a throwaway variable
+		FVector CurrentMouseLoc, CurrentMouseDirection;
 		PlayerController->DeprojectMousePositionToWorld(CurrentMouseLoc, CurrentMouseDirection);
 		FRotator CurrentMouseRot = CurrentMouseDirection.Rotation();
 
@@ -61,6 +70,45 @@ void ABacon::Tick(float DeltaTime)
 
 		SetActorRotation(NewBaconRot);
 		
+		//float CurrentMouseX;
+		//float CurrentMouseY;
+		//PlayerController->GetMousePosition(CurrentMouseX, CurrentMouseY);
+
+		TArray<AActor*> ChildrenForAim;
+		TArray<AActor*>& ChildrenForAimRef = ChildrenForAim;
+		this->GetAllChildActors(ChildrenForAimRef, false);
+
+		if (ChildrenForAim.Num() > 0) {
+
+			if (AGreaseGun * Gun = Cast<AGreaseGun>(ChildrenForAim[0])) {
+				FRotator CurrentGunRot = Gun->GetActorRotation();
+				FRotator NewGunRot = FRotator(CurrentMouseRot.Pitch * 2.0f, CurrentGunRot.Yaw, CurrentGunRot.Roll);
+				Gun->SetActorRotation(NewGunRot);
+				UE_LOG(LogTemp, Warning, TEXT("Gun rot: %f %f %f"), NewGunRot.Pitch, NewGunRot.Yaw, NewGunRot.Roll);
+				UE_LOG(LogTemp, Warning, TEXT("TEST"));
+				//Camera->SetRelativeRotation(NewCameraRot);
+				FRotator CurrentCameraRot = Camera->GetComponentRotation();
+				FRotator NewCameraRot = FRotator(CurrentMouseRot.Pitch, CurrentMouseRot.Yaw, CurrentCameraRot.Roll);
+				Camera->SetWorldRotation(NewCameraRot);
+
+				FRotator CurrentBulletSocketRot = BulletSocket->GetComponentRotation();
+				FRotator NewBulletSocketRot = FRotator(CurrentMouseRot.Pitch, CurrentMouseRot.Yaw, CurrentBulletSocketRot.Roll);
+				BulletSocket->SetWorldRotation(NewBulletSocketRot);
+				
+				FVector CurrentBulletSocketLoc = BulletSocket->GetComponentLocation();
+				UE_LOG(LogTemp, Warning, TEXT("Bullet socket location: %f %f %f"), CurrentBulletSocketLoc.X, CurrentBulletSocketLoc.Y, CurrentBulletSocketLoc.Z);
+				//FVector NewBulletSocketLoc = FVector(CurrentBulletSocketLoc.X, CurrentBulletSocketLoc.Y, CurrentMouseLoc.Z);
+				//UE_LOG(LogTemp, Warning, TEXT("Bullet socket location: %f %f %f"), NewBulletSocketLoc.X, NewBulletSocketLoc.Y, NewBulletSocketLoc.Z);
+				//UE_LOG(LogTemp, Warning, TEXT("Change to tick structure"));
+				//UE_LOG(LogTemp, Warning, TEXT("Camera rot: %f %f %f"), CurrentMouseRot.Pitch, CurrentGunRot.Yaw, CurrentGunRot.Roll);
+				//UE_LOG(LogTemp, Warning, TEXT("Gun rot: %f %f %f"), NewCameraRot.Pitch, NewCameraRot.Yaw, NewCameraRot.Roll);
+				//UE_LOG(LogTemp, Warning, TEXT("Cam set world rot"));
+				//UE_LOG(LogTemp, Warning, TEXT("Bullet socket reset set world rot"));
+				//UE_LOG(LogTemp, Warning, TEXT("Bullet socket set world loc"));
+				//AddControllerPitchInput(CurrentMouseRot.Pitch * 0.1f);
+			}
+		}
+
 		// Reset mouse to center of viewport
 		// Calculated in tick in case viewport size changed mid-game
 		FVector2D ViewportSize = FVector2D(GEngine->GameViewport->Viewport->GetSizeXY());
@@ -135,7 +183,12 @@ void ABacon::OnFire_Implementation() {
 				Gun->DecreaseAmmo();
 			
 				FHitResult OutHit;
-				FVector Start = BulletSocket->GetComponentLocation();
+				APlayerController* PlayerController = Cast<APlayerController>(GetController());
+				FVector CurrentMouseLoc, CurrentMouseDirection;
+				PlayerController->DeprojectMousePositionToWorld(CurrentMouseLoc, CurrentMouseDirection);
+				//FVector Start = BulletSocket->GetComponentLocation();
+				FVector Start = CurrentMouseLoc;
+				UE_LOG(LogTemp, Warning, TEXT("NEW Bullet socket location: %f %f %f"), Start.X, Start.Y, Start.Z);
 				FVector ForwardVector = GetActorForwardVector();
 				FVector End = ((ForwardVector * ShootRange) + Start); // Shoot in direction bacon faces
 				FCollisionQueryParams CollisionParams;
@@ -183,7 +236,7 @@ void ABacon::Reload_Implementation() {
 				Gun->Reload(Refill);
 			}
 			else {
-				Destroy();
+				Perish();
 			}
 		}
 	}
@@ -206,4 +259,8 @@ void ABacon::DropGrease(FVector SpawnLoc) {
 	SpawnParams.Owner = this;
 	SpawnParams.Instigator = Instigator;
 	GetWorld()->SpawnActor<AGreaseDrop>(GreaseBullet, SpawnLoc, GetActorRotation(), SpawnParams);
+}
+
+void ABacon::Perish_Implementation() {
+	Destroy();
 }

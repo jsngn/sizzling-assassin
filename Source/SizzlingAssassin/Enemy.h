@@ -35,6 +35,18 @@ public:
 	UFUNCTION()
 	void Attacked(UPrimitiveComponent* HitComponent);
 
+	// Max health of enemy
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
+	float FullHealth;
+
+	// Update this throughout gameplay
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Health")
+	float CurrentHealth;
+
+	// For HUD
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Health")
+	float HealthPercentage;
+
 protected:
 	// Collision box for handling critical hits
 	UPROPERTY(VisibleAnywhere)
@@ -43,4 +55,13 @@ protected:
 	// Collision box for handling normal hits
 	UPROPERTY(VisibleAnywhere)
 	class UBoxComponent* NormalHitBox;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+	float CritDamage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+	float NormalDamage;
+
+	UFUNCTION(BlueprintNativeEvent, Category = "Damage")
+	void Death();
 };

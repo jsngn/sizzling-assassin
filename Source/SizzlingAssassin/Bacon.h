@@ -4,8 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Camera/CameraComponent.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "Bacon.generated.h"
 
 UCLASS()
@@ -77,6 +75,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Gun")
 	USceneComponent* BulletSocket;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	class UCameraComponent* Camera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SpringArm")
+	class USpringArmComponent* SpringArm;
+
 	// PLEASE CALL PARENT FUNCTION AFTER BP IMPLEMENTATION
 	UFUNCTION(BlueprintNativeEvent, Category = "Gun")
 	void OnFire();
@@ -111,4 +115,7 @@ protected:
 	// Spawns grease bullet on ground if line trace misses enemy
 	UFUNCTION()
 	void DropGrease(FVector SpawnLoc);
+
+	UFUNCTION(BlueprintNativeEvent, Category = "Damage")
+	void Perish();
 };
