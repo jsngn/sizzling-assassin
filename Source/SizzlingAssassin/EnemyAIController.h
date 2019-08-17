@@ -38,14 +38,4 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "EnemyAI")
 	class UAISenseConfig_Sight* SightConfig;
-
-	// Time between each attack action
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
-	float AttackDelayTime;
-
-	// Dummy handle
-	FTimerHandle AttackTimer;
-
-	UFUNCTION()
-	void Attack();
 };

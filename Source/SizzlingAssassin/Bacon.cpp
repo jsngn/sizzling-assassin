@@ -2,7 +2,6 @@
 
 
 #include "Bacon.h"
-#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Engine.h"
 #include "DrawDebugHelpers.h"
@@ -12,7 +11,6 @@
 #include "Enemy.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "Components/BoxComponent.h"
 
 // Sets default values
 ABacon::ABacon()
@@ -34,14 +32,6 @@ ABacon::ABacon()
 	SpringArm->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->AttachToComponent(SpringArm, FAttachmentTransformRules::KeepRelativeTransform, USpringArmComponent::SocketName);
-
-	HitBox = CreateDefaultSubobject<UBoxComponent>(TEXT("HitBox"));
-	HitBox->SetNotifyRigidBodyCollision(true);
-	HitBox->BodyInstance.SetCollisionProfileName("BlockAllDynamic");
-	HitBox->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-	//HitBox->OnComponentHit.AddDynamic(this, &ABacon::OnBoxHit);
-	//HitBox->OnComponentBeginOverlap.AddDynamic(this, &ABacon::OnOverlapBegin);
-	//HitBox->OnComponentEndOverlap.AddDynamic(this, &ABacon::OnOverlapEnd);
 }
 
 // Called when the game starts or when spawned
@@ -110,14 +100,6 @@ void ABacon::Tick(float DeltaTime)
 		bIsTimerSet = false; // Heal has a timer to repeat itself if applicable, so call only once
 	}
 
-	TArray<AActor*> AttackingEnemies;
-	TArray<AActor*>& AttackingEnemiesRef = AttackingEnemies;
-	HitBox->GetOverlappingActors(AttackingEnemiesRef, AEnemy::StaticClass());
-	if (AttackingEnemies.Num() > 0) {
-		for (size_t i = 0; i < AttackingEnemies.Num(); i++) {
-			Heal();
-		}
-	}
 	UE_LOG(LogTemp, Warning, TEXT("Health: %i"), CurrentGrease);
 }
 
@@ -256,22 +238,7 @@ void ABacon::Perish_Implementation() {
 	Destroy();
 }
 
-//void ABacon::OnBoxHit_Implementation(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) {
-//	if (OtherActor && (OtherActor != this) && (OtherComp)) {
-//		AEnemy* Enemy = Cast<AEnemy>(OtherActor);
-//		
-//		if (Enemy) {
-//			CurrentGrease -= PestDamage;
-//
-//			if (CurrentGrease <= 0) {
-//				Perish();
-//			}
-//		}
-//	}
-//}
-
 void ABacon::Eaten_Implementation() {
-	UE_LOG(LogTemp, Warning, TEXT("Eaten called"));
 	CurrentGrease -= PestDamage;
 
 	if (CurrentGrease <= 0) {

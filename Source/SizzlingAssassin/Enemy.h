@@ -41,8 +41,8 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Health")
 	float HealthPercentage;
 
-	UFUNCTION(BlueprintNativeEvent, Category = "Damage")
-	void Attack();
+	UFUNCTION(BlueprintNativeEvent, Category = "Attack")
+	void Eat();
 
 protected:
 	// Collision box for handling critical hits
@@ -53,6 +53,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HitBox")
 	class UBoxComponent* NormalHitBox;
 
+	// Dummy socket where melee line trace starts, should be in front of capsule
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Damage")
+	USceneComponent* MeleeSocket;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 	float CritDamage;
 
@@ -62,4 +66,8 @@ protected:
 	// Do effects for death
 	UFUNCTION(BlueprintNativeEvent, Category = "Damage")
 	void Death();
+
+	// Small value because melee (this is range of line trace)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Attack")
+	float MeleeRange;
 };

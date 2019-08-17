@@ -7,6 +7,8 @@
 #include "Bacon.h"
 #include "Enemy.h"
 #include "TimerManager.h"
+#include "Kismet/GameplayStatics.h"
+#include "GreaseDrop.h"
 
 AEnemyAIController::AEnemyAIController() {
 	PrimaryActorTick.bCanEverTick = true;
@@ -35,45 +37,42 @@ AEnemyAIController::AEnemyAIController() {
 
 void AEnemyAIController::BeginPlay() {
 	Super::BeginPlay();
-
-	if (GetPerceptionComponent()) {
-		UE_LOG(LogTemp, Warning, TEXT("AI System Set"));
-	}
-	else {
-		UE_LOG(LogTemp, Warning, TEXT("AI Error"));
-	}
 }
 
 void AEnemyAIController::Tick(float DeltaTime) {
 	Super::Tick(DeltaTime);
 
-	// Don't move these
-	TArray<AActor*> OutActors;
-	TArray<AActor*>& OutActorsRef = OutActors;
-	TArray<ABacon*> BaconDetected;
+	// Move to closest grease drop
+	TArray<AActor*> ExistingGreaseDrops;
+	TArray<float> DistanceArray;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGreaseDrop::StaticClass(), ExistingGreaseDrops);
+	if (ExistingGreaseDrops.Num() > 0) {
+		for (size_t i = 0; i < ExistingGreaseDrops.Num(); i++) {
+			DistanceArray.Emplace(GetPawn()->GetDistanceTo(ExistingGreaseDrops[i]));
+		}
 
-	// Gets all actors in FOV of turret and puts them in OutActors array
-	GetPerceptionComponent()->GetCurrentlyPerceivedActors(*SightConfig->GetSenseImplementation(), OutActorsRef);
-	
-	if (OutActors.Num() > 0) {
-		for (size_t i = 0; i < OutActors.Num(); i++) {
-			ABacon* Bacon = Cast<ABacon>(OutActors[i]);
-			if (Bacon) {
-				MoveToActor(Bacon);
+		DistanceArray.Sort();
+
+		for (size_t i = 0; i < ExistingGreaseDrops.Num(); i++) {
+
+			if ((GetPawn()->GetDistanceTo(ExistingGreaseDrops[i])) == DistanceArray[0]) {
+				MoveToActor(ExistingGreaseDrops[i]);
 			}
+		}
+	}
+	else { // Only move to bacon if no grease drop
+		TArray<AActor*> ExistingBacon;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABacon::StaticClass(), ExistingBacon);
+		if (ExistingBacon.Num() > 0) {
+			MoveToActor(ExistingBacon[0]);
 		}
 	}
 }
 
 void AEnemyAIController::OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result) {
-	//Attack();
-	UE_LOG(LogTemp, Warning, TEXT("Move complete registered"));
-}
-
-void AEnemyAIController::Attack() {
 	AEnemy* Enemy = Cast<AEnemy>(GetPawn());
+
 	if (Enemy) {
-		UE_LOG(LogTemp, Warning, TEXT("Can get pawn"));
-		Enemy->Attack();
+		Enemy->Eat();
 	}
 }

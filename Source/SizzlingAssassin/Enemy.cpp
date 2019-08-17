@@ -7,6 +7,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Bacon.h"
 #include "Engine.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 AEnemy::AEnemy()
@@ -23,6 +24,9 @@ AEnemy::AEnemy()
 	NormalHitBox->SetNotifyRigidBodyCollision(true);
 	NormalHitBox->BodyInstance.SetCollisionProfileName("BlockAllDynamic");
 	NormalHitBox->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+
+	MeleeSocket = CreateDefaultSubobject<USceneComponent>(TEXT("MeleeSocket"));
+	MeleeSocket->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 // Called when the game starts or when spawned
@@ -69,16 +73,24 @@ void AEnemy::Death_Implementation() {
 	Destroy();
 }
 
-void AEnemy::Attack_Implementation() {
-	TArray<AActor*> ExistingBacon;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABacon::StaticClass(), ExistingBacon);
+void AEnemy::Eat_Implementation() {
+	FHitResult OutHit;
+	FVector Start = MeleeSocket->GetComponentLocation();
+	FVector ForwardVector = GetActorForwardVector();
+	FVector End = ((ForwardVector * MeleeRange) + Start);
+	FCollisionQueryParams CollisionParams;
 
-	if (ExistingBacon.Num() > 0) {
-		UE_LOG(LogTemp, Warning, TEXT("Bacon found"));
-		ABacon* Bacon = Cast<ABacon>(ExistingBacon[0]);
+	DrawDebugLine(GetWorld(), Start, End, FColor::Red, true);
 
-		if (Bacon) {
-			Bacon->Eaten();
+	if (GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, CollisionParams)) {
+		if (OutHit.bBlockingHit) {
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("You are hitting: %s"), *OutHit.GetActor()->GetName()));
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Impact Point: %s"), *OutHit.ImpactPoint.ToString()));
+			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, FString::Printf(TEXT("Normal Point: %s"), *OutHit.ImpactNormal.ToString()));
+
+			if (ABacon* HitBacon = Cast<ABacon>(OutHit.GetActor())) {
+				HitBacon->Eaten(); // Eats bacon if close enough to bacon
+			}
 		}
 	}
 }

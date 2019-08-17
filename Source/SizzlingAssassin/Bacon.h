@@ -62,9 +62,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Grease")
 	bool bIsTimerSet;
 
-	//UFUNCTION(BlueprintNativeEvent, Category = "Damage")
-	//void OnBoxHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-
 	// Takes pest damage
 	UFUNCTION(BlueprintNativeEvent, Category = "Damage")
 	void Eaten();
@@ -87,10 +84,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SpringArm")
 	class USpringArmComponent* SpringArm;
-
-	// No crit hit
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HitBox")
-	class UBoxComponent* HitBox;
 
 	// PLEASE CALL PARENT FUNCTION AFTER BP IMPLEMENTATION
 	UFUNCTION(BlueprintNativeEvent, Category = "Gun")
@@ -131,12 +124,7 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, Category = "Damage")
 	void Perish();
 
+	// How much damage can a pest do to bacon
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 	float PestDamage;
-
-	//UFUNCTION()
-	//void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-	//UFUNCTION()
-	//void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 };
