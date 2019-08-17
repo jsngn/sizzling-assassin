@@ -26,12 +26,6 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	/*UFUNCTION(BlueprintNativeEvent, Category = "Damage")
-	void OnCritHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Damage")
-	void OnNormalHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);*/
-
 	UFUNCTION()
 	void Attacked(UPrimitiveComponent* HitComponent);
 
@@ -47,13 +41,16 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Health")
 	float HealthPercentage;
 
+	UFUNCTION(BlueprintNativeEvent, Category = "Damage")
+	void Attack();
+
 protected:
 	// Collision box for handling critical hits
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HitBox")
 	class UBoxComponent* CritHitBox;
 
 	// Collision box for handling normal hits
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "HitBox")
 	class UBoxComponent* NormalHitBox;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
@@ -62,6 +59,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 	float NormalDamage;
 
+	// Do effects for death
 	UFUNCTION(BlueprintNativeEvent, Category = "Damage")
 	void Death();
 };

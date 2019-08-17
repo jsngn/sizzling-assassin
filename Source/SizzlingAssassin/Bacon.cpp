@@ -12,6 +12,7 @@
 #include "Enemy.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Components/BoxComponent.h"
 
 // Sets default values
 ABacon::ABacon()
@@ -25,16 +26,22 @@ ABacon::ABacon()
 	ChildGun = CreateDefaultSubobject<UChildActorComponent>(TEXT("ChildGun"));
 	ChildGun->AttachToComponent(GunSocket, FAttachmentTransformRules::KeepRelativeTransform);
 
-	// Create bullet socket
+	// Create bullet socket where line traces start
 	BulletSocket = CreateDefaultSubobject<USceneComponent>(TEXT("BulletSocket"));
 	BulletSocket->AttachToComponent(ChildGun, FAttachmentTransformRules::KeepRelativeTransform);
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->AttachToComponent(SpringArm, FAttachmentTransformRules::KeepRelativeTransform, USpringArmComponent::SocketName);
 
+	HitBox = CreateDefaultSubobject<UBoxComponent>(TEXT("HitBox"));
+	HitBox->SetNotifyRigidBodyCollision(true);
+	HitBox->BodyInstance.SetCollisionProfileName("BlockAllDynamic");
+	HitBox->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+	//HitBox->OnComponentHit.AddDynamic(this, &ABacon::OnBoxHit);
+	//HitBox->OnComponentBeginOverlap.AddDynamic(this, &ABacon::OnOverlapBegin);
+	//HitBox->OnComponentEndOverlap.AddDynamic(this, &ABacon::OnOverlapEnd);
 }
 
 // Called when the game starts or when spawned
@@ -46,7 +53,7 @@ void ABacon::BeginPlay()
 	CurrentGrease = FullGrease;
 	GreasePercentage = float(CurrentGrease) / float(FullGrease);
 
-	// False so bacon doesn't heal on spawn
+	// False so bacon doesn't heal on spawn (outside healing space)
 	bIsHealing = false;
 	bIsTimerSet = false;
 }
@@ -65,15 +72,12 @@ void ABacon::Tick(float DeltaTime)
 		// Get rotation of bacon in world
 		FRotator CurrentBaconRot = GetActorRotation();
 
-		// Calculate new rotation by substituting cursor's yaw & pitch into old bacon rotation
+		// Calculate new rotation by substituting cursor's yaw into old bacon rotation
 		FRotator NewBaconRot = FRotator(CurrentBaconRot.Pitch, CurrentMouseRot.Yaw, CurrentBaconRot.Roll);
 
-		SetActorRotation(NewBaconRot);
-		
-		//float CurrentMouseX;
-		//float CurrentMouseY;
-		//PlayerController->GetMousePosition(CurrentMouseX, CurrentMouseY);
+		SetActorRotation(NewBaconRot);  // Turn the actual mesh (will turn camera too, but this is reset later)
 
+		// Get reference to grease gun
 		TArray<AActor*> ChildrenForAim;
 		TArray<AActor*>& ChildrenForAimRef = ChildrenForAim;
 		this->GetAllChildActors(ChildrenForAimRef, false);
@@ -81,31 +85,15 @@ void ABacon::Tick(float DeltaTime)
 		if (ChildrenForAim.Num() > 0) {
 
 			if (AGreaseGun * Gun = Cast<AGreaseGun>(ChildrenForAim[0])) {
-				FRotator CurrentGunRot = Gun->GetActorRotation();
-				FRotator NewGunRot = FRotator(CurrentMouseRot.Pitch * 2.0f, CurrentGunRot.Yaw, CurrentGunRot.Roll);
-				Gun->SetActorRotation(NewGunRot);
-				UE_LOG(LogTemp, Warning, TEXT("Gun rot: %f %f %f"), NewGunRot.Pitch, NewGunRot.Yaw, NewGunRot.Roll);
-				UE_LOG(LogTemp, Warning, TEXT("TEST"));
-				//Camera->SetRelativeRotation(NewCameraRot);
+				// Reset camera rotation so that its pitch and yaw match those of the cursor so camera follows cursor
 				FRotator CurrentCameraRot = Camera->GetComponentRotation();
 				FRotator NewCameraRot = FRotator(CurrentMouseRot.Pitch, CurrentMouseRot.Yaw, CurrentCameraRot.Roll);
 				Camera->SetWorldRotation(NewCameraRot);
 
-				FRotator CurrentBulletSocketRot = BulletSocket->GetComponentRotation();
-				FRotator NewBulletSocketRot = FRotator(CurrentMouseRot.Pitch, CurrentMouseRot.Yaw, CurrentBulletSocketRot.Roll);
-				BulletSocket->SetWorldRotation(NewBulletSocketRot);
-				
-				FVector CurrentBulletSocketLoc = BulletSocket->GetComponentLocation();
-				UE_LOG(LogTemp, Warning, TEXT("Bullet socket location: %f %f %f"), CurrentBulletSocketLoc.X, CurrentBulletSocketLoc.Y, CurrentBulletSocketLoc.Z);
-				//FVector NewBulletSocketLoc = FVector(CurrentBulletSocketLoc.X, CurrentBulletSocketLoc.Y, CurrentMouseLoc.Z);
-				//UE_LOG(LogTemp, Warning, TEXT("Bullet socket location: %f %f %f"), NewBulletSocketLoc.X, NewBulletSocketLoc.Y, NewBulletSocketLoc.Z);
-				//UE_LOG(LogTemp, Warning, TEXT("Change to tick structure"));
-				//UE_LOG(LogTemp, Warning, TEXT("Camera rot: %f %f %f"), CurrentMouseRot.Pitch, CurrentGunRot.Yaw, CurrentGunRot.Roll);
-				//UE_LOG(LogTemp, Warning, TEXT("Gun rot: %f %f %f"), NewCameraRot.Pitch, NewCameraRot.Yaw, NewCameraRot.Roll);
-				//UE_LOG(LogTemp, Warning, TEXT("Cam set world rot"));
-				//UE_LOG(LogTemp, Warning, TEXT("Bullet socket reset set world rot"));
-				//UE_LOG(LogTemp, Warning, TEXT("Bullet socket set world loc"));
-				//AddControllerPitchInput(CurrentMouseRot.Pitch * 0.1f);
+				// Reset gun rotation so that the direction that gun points in is controlled by cursor/camera
+				FRotator CurrentGunRot = Gun->GetActorRotation();
+				FRotator NewGunRot = FRotator(NewCameraRot.Pitch, CurrentGunRot.Yaw, CurrentGunRot.Roll);
+				Gun->SetActorRotation(NewGunRot);
 			}
 		}
 
@@ -121,7 +109,16 @@ void ABacon::Tick(float DeltaTime)
 		Heal();
 		bIsTimerSet = false; // Heal has a timer to repeat itself if applicable, so call only once
 	}
-	//UE_LOG(LogTemp, Warning, TEXT("Health: %i"), CurrentGrease);
+
+	TArray<AActor*> AttackingEnemies;
+	TArray<AActor*>& AttackingEnemiesRef = AttackingEnemies;
+	HitBox->GetOverlappingActors(AttackingEnemiesRef, AEnemy::StaticClass());
+	if (AttackingEnemies.Num() > 0) {
+		for (size_t i = 0; i < AttackingEnemies.Num(); i++) {
+			Heal();
+		}
+	}
+	UE_LOG(LogTemp, Warning, TEXT("Health: %i"), CurrentGrease);
 }
 
 // Called to bind functionality to input
@@ -183,14 +180,9 @@ void ABacon::OnFire_Implementation() {
 				Gun->DecreaseAmmo();
 			
 				FHitResult OutHit;
-				APlayerController* PlayerController = Cast<APlayerController>(GetController());
-				FVector CurrentMouseLoc, CurrentMouseDirection;
-				PlayerController->DeprojectMousePositionToWorld(CurrentMouseLoc, CurrentMouseDirection);
-				//FVector Start = BulletSocket->GetComponentLocation();
-				FVector Start = CurrentMouseLoc;
-				UE_LOG(LogTemp, Warning, TEXT("NEW Bullet socket location: %f %f %f"), Start.X, Start.Y, Start.Z);
-				FVector ForwardVector = GetActorForwardVector();
-				FVector End = ((ForwardVector * ShootRange) + Start); // Shoot in direction bacon faces
+				FVector Start = BulletSocket->GetComponentLocation();
+				FVector ForwardVector = Gun->GetActorForwardVector(); // Shoot forward relative to gun so gun's rotation controls where to shoot
+				FVector End = ((ForwardVector * ShootRange) + Start);
 				FCollisionQueryParams CollisionParams;
 
 				DrawDebugLine(GetWorld(), Start, End, FColor::Green, true);
@@ -202,7 +194,6 @@ void ABacon::OnFire_Implementation() {
 						GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, FString::Printf(TEXT("Normal Point: %s"), *OutHit.ImpactNormal.ToString()));
 
 						if (AEnemy* HitEnemy = Cast<AEnemy>(OutHit.GetActor())) {
-							UE_LOG(LogTemp, Warning, TEXT("Do damage"));
 							GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("You are hitting component: %s"), *OutHit.GetComponent()->GetName()));
 							HitEnemy->Attacked(OutHit.GetComponent());
 						}
@@ -263,4 +254,27 @@ void ABacon::DropGrease(FVector SpawnLoc) {
 
 void ABacon::Perish_Implementation() {
 	Destroy();
+}
+
+//void ABacon::OnBoxHit_Implementation(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) {
+//	if (OtherActor && (OtherActor != this) && (OtherComp)) {
+//		AEnemy* Enemy = Cast<AEnemy>(OtherActor);
+//		
+//		if (Enemy) {
+//			CurrentGrease -= PestDamage;
+//
+//			if (CurrentGrease <= 0) {
+//				Perish();
+//			}
+//		}
+//	}
+//}
+
+void ABacon::Eaten_Implementation() {
+	UE_LOG(LogTemp, Warning, TEXT("Eaten called"));
+	CurrentGrease -= PestDamage;
+
+	if (CurrentGrease <= 0) {
+		Perish();
+	}
 }

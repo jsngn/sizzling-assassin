@@ -3,6 +3,10 @@
 
 #include "Enemy.h"
 #include "Components/BoxComponent.h"
+#include "EnemyAIController.h"
+#include "Kismet/GameplayStatics.h"
+#include "Bacon.h"
+#include "Engine.h"
 
 // Sets default values
 AEnemy::AEnemy()
@@ -11,17 +15,13 @@ AEnemy::AEnemy()
 	PrimaryActorTick.bCanEverTick = true;
 
 	CritHitBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CritHitBox"));
-	CritHitBox->SetSimulatePhysics(true);
 	CritHitBox->SetNotifyRigidBodyCollision(true);
 	CritHitBox->BodyInstance.SetCollisionProfileName("BlockAllDynamic");
-	//CritHitBox->OnComponentHit.AddDynamic(this, &AEnemy::OnCritHit);
 	CritHitBox->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 
 	NormalHitBox = CreateDefaultSubobject<UBoxComponent>(TEXT("NormalHitBox"));
-	NormalHitBox->SetSimulatePhysics(true);
 	NormalHitBox->SetNotifyRigidBodyCollision(true);
 	NormalHitBox->BodyInstance.SetCollisionProfileName("BlockAllDynamic");
-	//NormalHitBox->OnComponentHit.AddDynamic(this, &AEnemy::OnNormalHit);
 	NormalHitBox->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
@@ -67,4 +67,18 @@ void AEnemy::Attacked(UPrimitiveComponent* HitComponent) {
 
 void AEnemy::Death_Implementation() {
 	Destroy();
+}
+
+void AEnemy::Attack_Implementation() {
+	TArray<AActor*> ExistingBacon;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABacon::StaticClass(), ExistingBacon);
+
+	if (ExistingBacon.Num() > 0) {
+		UE_LOG(LogTemp, Warning, TEXT("Bacon found"));
+		ABacon* Bacon = Cast<ABacon>(ExistingBacon[0]);
+
+		if (Bacon) {
+			Bacon->Eaten();
+		}
+	}
 }
