@@ -47,6 +47,13 @@ void AEnemyAIController::Tick(float DeltaTime) {
 	TArray<float> DistanceArray;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AGreaseDrop::StaticClass(), ExistingGreaseDrops);
 	if (ExistingGreaseDrops.Num() > 0) {
+		// Can only be distracted by grease drops nearby
+		for (size_t i = 0; i < ExistingGreaseDrops.Num(); i++) {
+			if (!LineOfSightTo(ExistingGreaseDrops[i])) {
+				ExistingGreaseDrops.RemoveAt(i);
+			}
+		}
+
 		for (size_t i = 0; i < ExistingGreaseDrops.Num(); i++) {
 			DistanceArray.Emplace(GetPawn()->GetDistanceTo(ExistingGreaseDrops[i]));
 		}
@@ -64,7 +71,9 @@ void AEnemyAIController::Tick(float DeltaTime) {
 		TArray<AActor*> ExistingBacon;
 		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ABacon::StaticClass(), ExistingBacon);
 		if (ExistingBacon.Num() > 0) {
-			MoveToActor(ExistingBacon[0]);
+			if (LineOfSightTo(ExistingBacon[0])) { // Only chase bacon if it can see bacon
+				MoveToActor(ExistingBacon[0]);
+			}
 		}
 	}
 }
