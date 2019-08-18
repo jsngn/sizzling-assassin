@@ -66,6 +66,10 @@ public:
 	UFUNCTION(BlueprintNativeEvent, Category = "Damage")
 	void Eaten();
 
+	// Do effects for death
+	UFUNCTION(BlueprintNativeEvent, Category = "Damage")
+	void Perish();
+
 protected:
 	// Dummy gun socket to attach grease gun child actor
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Gun")
@@ -119,10 +123,6 @@ protected:
 	// Spawns grease bullet on ground if line trace misses enemy
 	UFUNCTION()
 	void DropGrease(FVector SpawnLoc);
-
-	// Do effects for death
-	UFUNCTION(BlueprintNativeEvent, Category = "Damage")
-	void Perish();
 
 	// How much damage can a pest do to bacon
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")

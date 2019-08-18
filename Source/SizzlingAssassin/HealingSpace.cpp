@@ -5,7 +5,6 @@
 #include "DrawDebugHelpers.h"
 #include "Bacon.h"
 #include "EnemySpawnVolume.h"
-#include "EnemySpawnVolume.h"
 
 AHealingSpace::AHealingSpace() {
 	OnActorBeginOverlap.AddDynamic(this, &AHealingSpace::OnOverlapBegin);
