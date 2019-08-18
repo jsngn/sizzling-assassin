@@ -4,21 +4,15 @@
 #include "Human.h"
 #include "Components/BoxComponent.h"
 #include "Bacon.h"
+#include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
+#include "Waypoint.h"
+#include "HumanAIController.h"
 
 // Sets default values
 AHuman::AHuman()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
-	DamageBoxSocket = CreateDefaultSubobject<USceneComponent>(TEXT("DamageBoxSocket"));
-	DamageBoxSocket->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-
-	DamageBox = CreateDefaultSubobject<UBoxComponent>(TEXT("DamageBox"));
-	DamageBox->SetNotifyRigidBodyCollision(true);
-	DamageBox->BodyInstance.SetCollisionProfileName("BlockAllDynamic");
-	DamageBox->AttachToComponent(DamageBoxSocket, FAttachmentTransformRules::KeepRelativeTransform);
-	DamageBox->OnComponentHit.AddDynamic(this, &AHuman::OnBoxHit);
 }
 
 // Called when the game starts or when spawned
@@ -26,13 +20,25 @@ void AHuman::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	// Gets TArray of waypoints for this human to move back and forth between
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AWaypoint::StaticClass(), AllWaypoints);
+	for (size_t i = 0; i < AllWaypoints.Num(); i++) {
+		if (AWaypoint * Waypoint = Cast<AWaypoint>(AllWaypoints[i])) {
+			if (Waypoint->GetWaypointOrder() == CurrentWaypoint || Waypoint->GetWaypointOrder() == MaxWaypoint) {
+				AccessibleWaypoints.Emplace(Waypoint);
+			}
+		}
+	}
+
+	Move();
 }
 
 // Called every frame
 void AHuman::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	UE_LOG(LogTemp, Warning, TEXT("All waypoints detected: %i"), AllWaypoints.Num());
+	UE_LOG(LogTemp, Warning, TEXT("Accessible waypoints detected: %i"), AccessibleWaypoints.Num());
 }
 
 // Called to bind functionality to input
@@ -42,10 +48,24 @@ void AHuman::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 }
 
-void AHuman::OnBoxHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) {
-	if (OtherActor && (OtherActor != this) && (OtherComp)) {
-		if (ABacon * Bacon = Cast<ABacon>(OtherActor)) {
-			Bacon->Perish();
+void AHuman::Move_Implementation() {
+	AHumanAIController* HumanAIController = Cast<AHumanAIController>(GetController());
+
+	if (HumanAIController) {
+		for (AActor* Waypoint : AccessibleWaypoints) {
+			if (AWaypoint * PossibleTargetWaypoint = Cast<AWaypoint>(Waypoint)) {
+				if (PossibleTargetWaypoint->GetWaypointOrder() == CurrentWaypoint) {
+					HumanAIController->MoveToActor(PossibleTargetWaypoint);
+					UE_LOG(LogTemp, Warning, TEXT("Current waypoint number: %i"), CurrentWaypoint);
+					if (CurrentWaypoint == MinWaypoint) {
+						CurrentWaypoint = MaxWaypoint;
+					}
+					else {
+						CurrentWaypoint = MinWaypoint;
+					}
+					break;
+				}
+			}
 		}
 	}
 }

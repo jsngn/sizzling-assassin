@@ -14,4 +14,6 @@ class SIZZLINGASSASSIN_API AHumanAIController : public AAIController
 {
 	GENERATED_BODY()
 	
+public:
+	void OnMoveCompleted(FAIRequestID RequestID, const FPathFollowingResult& Result) override;
 };
