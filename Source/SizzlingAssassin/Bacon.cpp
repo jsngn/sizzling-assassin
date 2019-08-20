@@ -52,7 +52,7 @@ void ABacon::BeginPlay()
 void ABacon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	UE_LOG(LogTemp, Warning, TEXT("HUD fixes"));
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController())) {
 		// Calculate rotation of cursor in world
 		FVector CurrentMouseLoc, CurrentMouseDirection;
@@ -207,6 +207,7 @@ void ABacon::Reload_Implementation() {
 			if (Refill <= CurrentGrease) {
 				CurrentGrease -= Refill;
 				Gun->Reload(Refill);
+				GreasePercentage = float(CurrentGrease) / float(FullGrease);
 			}
 			else {
 				Perish();
@@ -224,6 +225,7 @@ void ABacon::Heal_Implementation() {
 		else {
 			CurrentGrease = FullGrease;
 		}
+		GreasePercentage = float(CurrentGrease) / float(FullGrease);
 	}
 }
 
@@ -240,8 +242,51 @@ void ABacon::Perish_Implementation() {
 
 void ABacon::Eaten_Implementation() {
 	CurrentGrease -= PestDamage;
-
+	
 	if (CurrentGrease <= 0) {
 		Perish();
+	}
+	else {
+		GreasePercentage = float(CurrentGrease) / float(FullGrease);
+	}
+}
+
+FText ABacon::GetFullAmmoText() {
+	// Get reference to grease gun
+	TArray<AActor*> ChildrenForHUD;
+	TArray<AActor*>& ChildrenForHUDRef = ChildrenForHUD;
+	this->GetAllChildActors(ChildrenForHUDRef, false);
+
+	if (ChildrenForHUD.Num() > 0) {
+
+		if (AGreaseGun * Gun = Cast<AGreaseGun>(ChildrenForHUD[0])) {
+			return Gun->GetFullAmmoText();
+		}
+		else {
+			return FText::FromString("##");
+		}
+	}
+	else {
+		return FText::FromString("##");
+	}
+}
+
+FText ABacon::GetCurrentAmmoText() {
+	// Get reference to grease gun
+	TArray<AActor*> ChildrenForHUD;
+	TArray<AActor*>& ChildrenForHUDRef = ChildrenForHUD;
+	this->GetAllChildActors(ChildrenForHUDRef, false);
+
+	if (ChildrenForHUD.Num() > 0) {
+
+		if (AGreaseGun * Gun = Cast<AGreaseGun>(ChildrenForHUD[0])) {
+			return Gun->GetCurrentAmmoText();
+		}
+		else {
+			return FText::FromString("##");
+		}
+	}
+	else {
+		return FText::FromString("##");
 	}
 }

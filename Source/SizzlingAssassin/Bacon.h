@@ -70,6 +70,14 @@ public:
 	UFUNCTION(BlueprintNativeEvent, Category = "Damage")
 	void Perish();
 
+	// For HUD
+	UFUNCTION(BlueprintPure, Category = "Ammo")
+	FText GetFullAmmoText();
+
+	// For HUD
+	UFUNCTION(BlueprintPure, Category = "Ammo")
+	FText GetCurrentAmmoText();
+
 protected:
 	// Dummy gun socket to attach grease gun child actor
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Gun")
