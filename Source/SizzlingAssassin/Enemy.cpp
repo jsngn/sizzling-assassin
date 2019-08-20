@@ -67,6 +67,9 @@ void AEnemy::Attacked(UPrimitiveComponent* HitComponent) {
 	if (CurrentHealth <= 0.0f) {
 		Death();
 	}
+	else {
+		HealthPercentage = float(CurrentHealth) / float(FullHealth);
+	}
 }
 
 void AEnemy::Death_Implementation() {
