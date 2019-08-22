@@ -135,4 +135,8 @@ protected:
 	// How much damage can a pest do to bacon
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 	float PestDamage;
+
+	// True when in game and unpaused
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aiming")
+	bool bIsAiming;
 };

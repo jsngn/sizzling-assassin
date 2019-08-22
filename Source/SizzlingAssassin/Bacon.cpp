@@ -46,52 +46,56 @@ void ABacon::BeginPlay()
 	// False so bacon doesn't heal on spawn (outside healing space)
 	bIsHealing = false;
 	bIsTimerSet = false;
+
+	bIsAiming = true;
 }
 
 // Called every frame
 void ABacon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	UE_LOG(LogTemp, Warning, TEXT("HUD fixes"));
-	if (APlayerController* PlayerController = Cast<APlayerController>(GetController())) {
-		// Calculate rotation of cursor in world
-		FVector CurrentMouseLoc, CurrentMouseDirection;
-		PlayerController->DeprojectMousePositionToWorld(CurrentMouseLoc, CurrentMouseDirection);
-		FRotator CurrentMouseRot = CurrentMouseDirection.Rotation();
+	
+	if (bIsAiming) {
+		if (APlayerController* PlayerController = Cast<APlayerController>(GetController())) {
+			// Calculate rotation of cursor in world
+			FVector CurrentMouseLoc, CurrentMouseDirection;
+			PlayerController->DeprojectMousePositionToWorld(CurrentMouseLoc, CurrentMouseDirection);
+			FRotator CurrentMouseRot = CurrentMouseDirection.Rotation();
 
-		// Get rotation of bacon in world
-		FRotator CurrentBaconRot = GetActorRotation();
+			// Get rotation of bacon in world
+			FRotator CurrentBaconRot = GetActorRotation();
 
-		// Calculate new rotation by substituting cursor's yaw into old bacon rotation
-		FRotator NewBaconRot = FRotator(CurrentBaconRot.Pitch, CurrentMouseRot.Yaw, CurrentBaconRot.Roll);
+			// Calculate new rotation by substituting cursor's yaw into old bacon rotation
+			FRotator NewBaconRot = FRotator(CurrentBaconRot.Pitch, CurrentMouseRot.Yaw, CurrentBaconRot.Roll);
 
-		SetActorRotation(NewBaconRot);  // Turn the actual mesh (will turn camera too, but this is reset later)
+			SetActorRotation(NewBaconRot);  // Turn the actual mesh (will turn camera too, but this is reset later)
 
-		// Get reference to grease gun
-		TArray<AActor*> ChildrenForAim;
-		TArray<AActor*>& ChildrenForAimRef = ChildrenForAim;
-		this->GetAllChildActors(ChildrenForAimRef, false);
+			// Get reference to grease gun
+			TArray<AActor*> ChildrenForAim;
+			TArray<AActor*>& ChildrenForAimRef = ChildrenForAim;
+			this->GetAllChildActors(ChildrenForAimRef, false);
 
-		if (ChildrenForAim.Num() > 0) {
+			if (ChildrenForAim.Num() > 0) {
 
-			if (AGreaseGun * Gun = Cast<AGreaseGun>(ChildrenForAim[0])) {
-				// Reset camera rotation so that its pitch and yaw match those of the cursor so camera follows cursor
-				FRotator CurrentCameraRot = Camera->GetComponentRotation();
-				FRotator NewCameraRot = FRotator(CurrentMouseRot.Pitch, CurrentMouseRot.Yaw, CurrentCameraRot.Roll);
-				Camera->SetWorldRotation(NewCameraRot);
+				if (AGreaseGun * Gun = Cast<AGreaseGun>(ChildrenForAim[0])) {
+					// Reset camera rotation so that its pitch and yaw match those of the cursor so camera follows cursor
+					FRotator CurrentCameraRot = Camera->GetComponentRotation();
+					FRotator NewCameraRot = FRotator(CurrentMouseRot.Pitch, CurrentMouseRot.Yaw, CurrentCameraRot.Roll);
+					Camera->SetWorldRotation(NewCameraRot);
 
-				// Reset gun rotation so that the direction that gun points in is controlled by cursor/camera
-				FRotator CurrentGunRot = Gun->GetActorRotation();
-				FRotator NewGunRot = FRotator(NewCameraRot.Pitch, CurrentGunRot.Yaw, CurrentGunRot.Roll);
-				Gun->SetActorRotation(NewGunRot);
+					// Reset gun rotation so that the direction that gun points in is controlled by cursor/camera
+					FRotator CurrentGunRot = Gun->GetActorRotation();
+					FRotator NewGunRot = FRotator(NewCameraRot.Pitch, CurrentGunRot.Yaw, CurrentGunRot.Roll);
+					Gun->SetActorRotation(NewGunRot);
+				}
 			}
-		}
 
-		// Reset mouse to center of viewport
-		// Calculated in tick in case viewport size changed mid-game
-		FVector2D ViewportSize = FVector2D(GEngine->GameViewport->Viewport->GetSizeXY());
-		FVector2D ViewportCenter = FVector2D(ViewportSize.X / 2, ViewportSize.Y / 2);
-		PlayerController->SetMouseLocation(ViewportCenter.X, ViewportCenter.Y);
+			// Reset mouse to center of viewport
+			// Calculated in tick in case viewport size changed mid-game
+			FVector2D ViewportSize = FVector2D(GEngine->GameViewport->Viewport->GetSizeXY());
+			FVector2D ViewportCenter = FVector2D(ViewportSize.X / 2, ViewportSize.Y / 2);
+			PlayerController->SetMouseLocation(ViewportCenter.X, ViewportCenter.Y);
+		}
 	}
 	
 	// Passes when enter sunlight area
@@ -99,8 +103,6 @@ void ABacon::Tick(float DeltaTime)
 		Heal();
 		bIsTimerSet = false; // Heal has a timer to repeat itself if applicable, so call only once
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Health: %i"), CurrentGrease);
 }
 
 // Called to bind functionality to input
