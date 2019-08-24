@@ -48,6 +48,9 @@ void ABacon::BeginPlay()
 	bIsTimerSet = false;
 
 	bIsAiming = true;
+
+	Camera->SetWorldRotation(FRotator::ZeroRotator);
+	UE_LOG(LogTemp, Warning, TEXT("Camera init position: %f %f %f"), FRotator::ZeroRotator.Pitch, FRotator::ZeroRotator.Yaw, FRotator::ZeroRotator.Roll);
 }
 
 // Called every frame
@@ -64,7 +67,7 @@ void ABacon::Tick(float DeltaTime)
 
 			// Get rotation of bacon in world
 			FRotator CurrentBaconRot = GetActorRotation();
-
+			UE_LOG(LogTemp, Warning, TEXT("Bacon rotation: %f %f %f"), CurrentBaconRot.Pitch, CurrentBaconRot.Yaw, CurrentBaconRot.Roll);
 			// Calculate new rotation by substituting cursor's yaw into old bacon rotation
 			FRotator NewBaconRot = FRotator(CurrentBaconRot.Pitch, CurrentMouseRot.Yaw, CurrentBaconRot.Roll);
 
@@ -81,12 +84,15 @@ void ABacon::Tick(float DeltaTime)
 					// Reset camera rotation so that its pitch and yaw match those of the cursor so camera follows cursor
 					FRotator CurrentCameraRot = Camera->GetComponentRotation();
 					FRotator NewCameraRot = FRotator(CurrentMouseRot.Pitch, CurrentMouseRot.Yaw, CurrentCameraRot.Roll);
-					Camera->SetWorldRotation(NewCameraRot);
 
-					// Reset gun rotation so that the direction that gun points in is controlled by cursor/camera
-					FRotator CurrentGunRot = Gun->GetActorRotation();
-					FRotator NewGunRot = FRotator(NewCameraRot.Pitch, CurrentGunRot.Yaw, CurrentGunRot.Roll);
-					Gun->SetActorRotation(NewGunRot);
+					if ((NewCameraRot.Pitch > CurrentCameraRot.Pitch && CurrentCameraRot.Pitch <= 15.0f) || (NewCameraRot.Pitch <= CurrentCameraRot.Pitch && CurrentCameraRot.Pitch >= -15.0f)) {
+						Camera->SetWorldRotation(NewCameraRot);
+						UE_LOG(LogTemp, Warning, TEXT("Camera rotation: %f %f %f"), NewCameraRot.Pitch, NewCameraRot.Yaw, NewCameraRot.Roll);
+						// Reset gun rotation so that the direction that gun points in is controlled by cursor/camera
+						FRotator CurrentGunRot = Gun->GetActorRotation();
+						FRotator NewGunRot = FRotator(NewCameraRot.Pitch, CurrentGunRot.Yaw, CurrentGunRot.Roll);
+						Gun->SetActorRotation(NewGunRot);
+					}
 				}
 			}
 
