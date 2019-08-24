@@ -50,21 +50,23 @@ void ABacon::BeginPlay()
 	bIsAiming = true;
 
 	Camera->SetWorldRotation(FRotator::ZeroRotator);
-	UE_LOG(LogTemp, Warning, TEXT("Camera init position: %f %f %f"), FRotator::ZeroRotator.Pitch, FRotator::ZeroRotator.Yaw, FRotator::ZeroRotator.Roll);
 }
 
 // Called every frame
 void ABacon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
 	if (bIsAiming) {
 		if (APlayerController* PlayerController = Cast<APlayerController>(GetController())) {
 			// Calculate rotation of cursor in world
 			FVector CurrentMouseLoc, CurrentMouseDirection;
 			PlayerController->DeprojectMousePositionToWorld(CurrentMouseLoc, CurrentMouseDirection);
 			FRotator CurrentMouseRot = CurrentMouseDirection.Rotation();
-
+			// float MouseX;
+			// float MouseY;
+			// PlayerController->GetMousePosition(MouseX, MouseY);
+			// UE_LOG(LogTemp, Warning, TEXT("Mouse position: %f %f %f"), CurrentMouseLoc.X, CurrentMouseLoc.Y, CurrentMouseLoc.Z);
 			// Get rotation of bacon in world
 			FRotator CurrentBaconRot = GetActorRotation();
 			UE_LOG(LogTemp, Warning, TEXT("Bacon rotation: %f %f %f"), CurrentBaconRot.Pitch, CurrentBaconRot.Yaw, CurrentBaconRot.Roll);
@@ -85,7 +87,7 @@ void ABacon::Tick(float DeltaTime)
 					FRotator CurrentCameraRot = Camera->GetComponentRotation();
 					FRotator NewCameraRot = FRotator(CurrentMouseRot.Pitch, CurrentMouseRot.Yaw, CurrentCameraRot.Roll);
 
-					if ((NewCameraRot.Pitch > CurrentCameraRot.Pitch && CurrentCameraRot.Pitch <= 15.0f) || (NewCameraRot.Pitch <= CurrentCameraRot.Pitch && CurrentCameraRot.Pitch >= -15.0f)) {
+					if ((NewCameraRot.Pitch > CurrentCameraRot.Pitch && CurrentCameraRot.Pitch < 15.0f) || (NewCameraRot.Pitch <= CurrentCameraRot.Pitch && CurrentCameraRot.Pitch > -15.0f)) {
 						Camera->SetWorldRotation(NewCameraRot);
 						UE_LOG(LogTemp, Warning, TEXT("Camera rotation: %f %f %f"), NewCameraRot.Pitch, NewCameraRot.Yaw, NewCameraRot.Roll);
 						// Reset gun rotation so that the direction that gun points in is controlled by cursor/camera
