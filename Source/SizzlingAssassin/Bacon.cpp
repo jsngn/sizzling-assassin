@@ -47,10 +47,10 @@ void ABacon::BeginPlay()
 	bIsHealing = false;
 	bIsTimerSet = false;
 
+	bIsShooting = false;
+
 	bIsAiming = true;
-
 	Camera->SetWorldRotation(FRotator::ZeroRotator);
-
 	PreviousMouseRot = FRotator::ZeroRotator;
 }
 
@@ -58,7 +58,7 @@ void ABacon::BeginPlay()
 void ABacon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	UE_LOG(LogTemp, Warning, TEXT("hopefully"));
+
 	if (bIsAiming) {
 		if (APlayerController* PlayerController = Cast<APlayerController>(GetController())) {
 			// Calculate rotation of cursor in world
@@ -66,17 +66,17 @@ void ABacon::Tick(float DeltaTime)
 			PlayerController->DeprojectMousePositionToWorld(CurrentMouseLoc, CurrentMouseDirection);
 			FRotator CurrentMouseRot = CurrentMouseDirection.Rotation();
 			
-			if (FMath::Abs(CurrentMouseRot.Yaw - PreviousMouseRot.Yaw) >= 2.0f) {
+			if (FMath::Abs(CurrentMouseRot.Yaw - PreviousMouseRot.Yaw) >= MinDegreesForRotation) { // So camera doesn't drift on its own when the cursor isn't exactly in the middle (bug for some viewport sizes)
 				// Get rotation of bacon in world
 				FRotator CurrentBaconRot = GetActorRotation();
-				UE_LOG(LogTemp, Warning, TEXT("Bacon rotation: %f %f %f"), CurrentBaconRot.Pitch, CurrentBaconRot.Yaw, CurrentBaconRot.Roll);
+				
 				// Calculate new rotation by substituting cursor's yaw into old bacon rotation
 				FRotator NewBaconRot = FRotator(CurrentBaconRot.Pitch, CurrentMouseRot.Yaw, CurrentBaconRot.Roll);
 
 				SetActorRotation(NewBaconRot);  // Turn the actual mesh (will turn camera too, but this is reset later)
 			}
 
-			if (FMath::Abs(CurrentMouseRot.Yaw - PreviousMouseRot.Yaw) >= 2.0f || FMath::Abs(CurrentMouseRot.Pitch - PreviousMouseRot.Pitch) >= 2.0f) {
+			if (FMath::Abs(CurrentMouseRot.Yaw - PreviousMouseRot.Yaw) >= MinDegreesForRotation || FMath::Abs(CurrentMouseRot.Pitch - PreviousMouseRot.Pitch) >= MinDegreesForRotation) { // The player must've actively tried to move the cursor for camera to move, not just camera drifting
 				// Get reference to grease gun
 				TArray<AActor*> ChildrenForAim;
 				TArray<AActor*>& ChildrenForAimRef = ChildrenForAim;
@@ -87,23 +87,26 @@ void ABacon::Tick(float DeltaTime)
 					if (AGreaseGun * Gun = Cast<AGreaseGun>(ChildrenForAim[0])) {
 						// Reset camera rotation so that its pitch and yaw match those of the cursor so camera follows cursor
 						FRotator CurrentCameraRot = Camera->GetComponentRotation();
-						FRotator NewCameraRot = CurrentCameraRot;
+						
+						FRotator NewCameraRot = CurrentCameraRot; // Dummy value
 
-						if (FMath::Abs(CurrentMouseRot.Yaw - PreviousMouseRot.Yaw) >= 2.0f && FMath::Abs(CurrentMouseRot.Pitch - PreviousMouseRot.Pitch) >= 2.0f) {
+						// Change only the rotation(s) that the player has actively tried to change by moving cursor
+						if (FMath::Abs(CurrentMouseRot.Yaw - PreviousMouseRot.Yaw) >= MinDegreesForRotation && FMath::Abs(CurrentMouseRot.Pitch - PreviousMouseRot.Pitch) >= MinDegreesForRotation) {
+							// CHANGE BOTH PITCH AND YAW
 							NewCameraRot = FRotator(CurrentMouseRot.Pitch, CurrentMouseRot.Yaw, CurrentCameraRot.Roll);
 						}
-						else if (FMath::Abs(CurrentMouseRot.Yaw - PreviousMouseRot.Yaw) >= 2.0f && FMath::Abs(CurrentMouseRot.Pitch - PreviousMouseRot.Pitch) < 2.0f) {
+						else if (FMath::Abs(CurrentMouseRot.Yaw - PreviousMouseRot.Yaw) >= MinDegreesForRotation && FMath::Abs(CurrentMouseRot.Pitch - PreviousMouseRot.Pitch) < MinDegreesForRotation) {
 							// ONLY CHANGE YAW
 							NewCameraRot = FRotator(CurrentCameraRot.Pitch, CurrentMouseRot.Yaw, CurrentCameraRot.Roll);
 						}
-						else if (FMath::Abs(CurrentMouseRot.Yaw - PreviousMouseRot.Yaw) < 2.0f && FMath::Abs(CurrentMouseRot.Pitch - PreviousMouseRot.Pitch) >= 2.0f) {
+						else if (FMath::Abs(CurrentMouseRot.Yaw - PreviousMouseRot.Yaw) < MinDegreesForRotation && FMath::Abs(CurrentMouseRot.Pitch - PreviousMouseRot.Pitch) >= MinDegreesForRotation) {
 							// ONLY CHANGE PITCH
 							NewCameraRot = FRotator(CurrentMouseRot.Pitch, CurrentCameraRot.Yaw, CurrentCameraRot.Roll);
 						}
 
-						if ((NewCameraRot.Pitch > CurrentCameraRot.Pitch && CurrentCameraRot.Pitch < 15.0f) || (NewCameraRot.Pitch <= CurrentCameraRot.Pitch && CurrentCameraRot.Pitch > -15.0f)) {
+						if ((NewCameraRot.Pitch > CurrentCameraRot.Pitch && NewCameraRot.Pitch < AimMax) || (NewCameraRot.Pitch <= CurrentCameraRot.Pitch && NewCameraRot.Pitch > AimMin)) { // If pitch changed, must be within a reasonable aim range
 							Camera->SetWorldRotation(NewCameraRot);
-							UE_LOG(LogTemp, Warning, TEXT("Camera rotation: %f %f %f"), NewCameraRot.Pitch, NewCameraRot.Yaw, NewCameraRot.Roll);
+							
 							// Reset gun rotation so that the direction that gun points in is controlled by cursor/camera
 							FRotator CurrentGunRot = Gun->GetActorRotation();
 							FRotator NewGunRot = FRotator(NewCameraRot.Pitch, CurrentGunRot.Yaw, CurrentGunRot.Roll);
@@ -119,7 +122,7 @@ void ABacon::Tick(float DeltaTime)
 			FVector2D ViewportCenter = FVector2D(ViewportSize.X / 2, ViewportSize.Y / 2);
 			PlayerController->SetMouseLocation(ViewportCenter.X, ViewportCenter.Y);
 
-			PreviousMouseRot = CurrentMouseRot;
+			PreviousMouseRot = CurrentMouseRot; // For next tick
 		}
 	}
 	
@@ -175,44 +178,46 @@ FText ABacon::GetCurrentGreaseText() {
 }
 
 void ABacon::OnFire_Implementation() {
-	// Get reference to grease gun
-	TArray<AActor*> ChildrenForFire;
-	TArray<AActor*>& ChildrenForFireRef = ChildrenForFire;
-	this->GetAllChildActors(ChildrenForFireRef, false);
+	if (bIsShooting) {
+		// Get reference to grease gun
+		TArray<AActor*> ChildrenForFire;
+		TArray<AActor*>& ChildrenForFireRef = ChildrenForFire;
+		this->GetAllChildActors(ChildrenForFireRef, false);
 
-	if (ChildrenForFire.Num() > 0) {
+		if (ChildrenForFire.Num() > 0) {
 
-		if (AGreaseGun* Gun = Cast<AGreaseGun>(ChildrenForFire[0])) {
+			if (AGreaseGun* Gun = Cast<AGreaseGun>(ChildrenForFire[0])) {
 			
-			// Fire if grease gun has any ammo left, otherwise ignore input
-			if (Gun->CanShoot()) {
-				Gun->DecreaseAmmo();
+				// Fire if grease gun has any ammo left, otherwise ignore input
+				if (Gun->CanShoot()) {
+					Gun->DecreaseAmmo();
 			
-				FHitResult OutHit;
-				FVector Start = BulletSocket->GetComponentLocation();
-				FVector ForwardVector = Gun->GetActorForwardVector(); // Shoot forward relative to gun so gun's rotation controls where to shoot
-				FVector End = ((ForwardVector * ShootRange) + Start);
-				FCollisionQueryParams CollisionParams;
+					FHitResult OutHit;
+					FVector Start = BulletSocket->GetComponentLocation();
+					FVector ForwardVector = Gun->GetActorForwardVector(); // Shoot forward relative to gun so gun's rotation controls where to shoot
+					FVector End = ((ForwardVector * ShootRange) + Start);
+					FCollisionQueryParams CollisionParams;
 
-				DrawDebugLine(GetWorld(), Start, End, FColor::Green, true);
+					DrawDebugLine(GetWorld(), Start, End, FColor::Green, true);
 
-				if (GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, CollisionParams)) {
-					if (OutHit.bBlockingHit) {
-						GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("You are hitting: %s"), *OutHit.GetActor()->GetName()));
-						GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Impact Point: %s"), *OutHit.ImpactPoint.ToString()));
-						GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, FString::Printf(TEXT("Normal Point: %s"), *OutHit.ImpactNormal.ToString()));
+					if (GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, CollisionParams)) {
+						if (OutHit.bBlockingHit) {
+							GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("You are hitting: %s"), *OutHit.GetActor()->GetName()));
+							GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Impact Point: %s"), *OutHit.ImpactPoint.ToString()));
+							GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, FString::Printf(TEXT("Normal Point: %s"), *OutHit.ImpactNormal.ToString()));
 
-						if (AEnemy* HitEnemy = Cast<AEnemy>(OutHit.GetActor())) {
-							GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("You are hitting component: %s"), *OutHit.GetComponent()->GetName()));
-							HitEnemy->Attacked(OutHit.GetComponent());
-						}
-						else {
-							DropGrease(OutHit.ImpactPoint); // Drop grease bullet where line trace hit, if hits anything
+							if (AEnemy* HitEnemy = Cast<AEnemy>(OutHit.GetActor())) {
+								GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("You are hitting component: %s"), *OutHit.GetComponent()->GetName()));
+								HitEnemy->Attacked(OutHit.GetComponent());
+							}
+							else {
+								DropGrease(OutHit.ImpactPoint); // Drop grease bullet where line trace hit, if hits anything
+							}
 						}
 					}
-				}
-				else {
-					DropGrease(End); // Drop grease at max range of line trace if hits nothing
+					else {
+						DropGrease(End); // Drop grease at max range of line trace if hits nothing
+					}
 				}
 			}
 		}

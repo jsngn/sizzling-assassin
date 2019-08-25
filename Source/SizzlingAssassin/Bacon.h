@@ -140,5 +140,22 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aiming")
 	bool bIsAiming;
 
+	// Stores the mouse rotation in last tick
 	FRotator PreviousMouseRot;
+
+	// Min pitch at which camera can rotate/gun can aim
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aiming")
+	float AimMin;
+
+	// Max pitch at which camera can rotate/gun can aim
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aiming")
+	float AimMax;
+
+	// Min change in rotation (pitch & yaw) of mouse in order for any movement to be triggered
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aiming")
+	float MinDegreesForRotation;
+
+	// True when not in main menu map
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gun")
+	bool bIsShooting;
 };
