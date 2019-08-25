@@ -50,50 +50,65 @@ void ABacon::BeginPlay()
 	bIsAiming = true;
 
 	Camera->SetWorldRotation(FRotator::ZeroRotator);
+
+	PreviousMouseRot = FRotator::ZeroRotator;
 }
 
 // Called every frame
 void ABacon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	UE_LOG(LogTemp, Warning, TEXT("hopefully"));
 	if (bIsAiming) {
 		if (APlayerController* PlayerController = Cast<APlayerController>(GetController())) {
 			// Calculate rotation of cursor in world
 			FVector CurrentMouseLoc, CurrentMouseDirection;
 			PlayerController->DeprojectMousePositionToWorld(CurrentMouseLoc, CurrentMouseDirection);
 			FRotator CurrentMouseRot = CurrentMouseDirection.Rotation();
-			// float MouseX;
-			// float MouseY;
-			// PlayerController->GetMousePosition(MouseX, MouseY);
-			// UE_LOG(LogTemp, Warning, TEXT("Mouse position: %f %f %f"), CurrentMouseLoc.X, CurrentMouseLoc.Y, CurrentMouseLoc.Z);
-			// Get rotation of bacon in world
-			FRotator CurrentBaconRot = GetActorRotation();
-			UE_LOG(LogTemp, Warning, TEXT("Bacon rotation: %f %f %f"), CurrentBaconRot.Pitch, CurrentBaconRot.Yaw, CurrentBaconRot.Roll);
-			// Calculate new rotation by substituting cursor's yaw into old bacon rotation
-			FRotator NewBaconRot = FRotator(CurrentBaconRot.Pitch, CurrentMouseRot.Yaw, CurrentBaconRot.Roll);
+			
+			if (FMath::Abs(CurrentMouseRot.Yaw - PreviousMouseRot.Yaw) >= 2.0f) {
+				// Get rotation of bacon in world
+				FRotator CurrentBaconRot = GetActorRotation();
+				UE_LOG(LogTemp, Warning, TEXT("Bacon rotation: %f %f %f"), CurrentBaconRot.Pitch, CurrentBaconRot.Yaw, CurrentBaconRot.Roll);
+				// Calculate new rotation by substituting cursor's yaw into old bacon rotation
+				FRotator NewBaconRot = FRotator(CurrentBaconRot.Pitch, CurrentMouseRot.Yaw, CurrentBaconRot.Roll);
 
-			SetActorRotation(NewBaconRot);  // Turn the actual mesh (will turn camera too, but this is reset later)
+				SetActorRotation(NewBaconRot);  // Turn the actual mesh (will turn camera too, but this is reset later)
+			}
 
-			// Get reference to grease gun
-			TArray<AActor*> ChildrenForAim;
-			TArray<AActor*>& ChildrenForAimRef = ChildrenForAim;
-			this->GetAllChildActors(ChildrenForAimRef, false);
+			if (FMath::Abs(CurrentMouseRot.Yaw - PreviousMouseRot.Yaw) >= 2.0f || FMath::Abs(CurrentMouseRot.Pitch - PreviousMouseRot.Pitch) >= 2.0f) {
+				// Get reference to grease gun
+				TArray<AActor*> ChildrenForAim;
+				TArray<AActor*>& ChildrenForAimRef = ChildrenForAim;
+				this->GetAllChildActors(ChildrenForAimRef, false);
 
-			if (ChildrenForAim.Num() > 0) {
+				if (ChildrenForAim.Num() > 0) {
 
-				if (AGreaseGun * Gun = Cast<AGreaseGun>(ChildrenForAim[0])) {
-					// Reset camera rotation so that its pitch and yaw match those of the cursor so camera follows cursor
-					FRotator CurrentCameraRot = Camera->GetComponentRotation();
-					FRotator NewCameraRot = FRotator(CurrentMouseRot.Pitch, CurrentMouseRot.Yaw, CurrentCameraRot.Roll);
+					if (AGreaseGun * Gun = Cast<AGreaseGun>(ChildrenForAim[0])) {
+						// Reset camera rotation so that its pitch and yaw match those of the cursor so camera follows cursor
+						FRotator CurrentCameraRot = Camera->GetComponentRotation();
+						FRotator NewCameraRot = CurrentCameraRot;
 
-					if ((NewCameraRot.Pitch > CurrentCameraRot.Pitch && CurrentCameraRot.Pitch < 15.0f) || (NewCameraRot.Pitch <= CurrentCameraRot.Pitch && CurrentCameraRot.Pitch > -15.0f)) {
-						Camera->SetWorldRotation(NewCameraRot);
-						UE_LOG(LogTemp, Warning, TEXT("Camera rotation: %f %f %f"), NewCameraRot.Pitch, NewCameraRot.Yaw, NewCameraRot.Roll);
-						// Reset gun rotation so that the direction that gun points in is controlled by cursor/camera
-						FRotator CurrentGunRot = Gun->GetActorRotation();
-						FRotator NewGunRot = FRotator(NewCameraRot.Pitch, CurrentGunRot.Yaw, CurrentGunRot.Roll);
-						Gun->SetActorRotation(NewGunRot);
+						if (FMath::Abs(CurrentMouseRot.Yaw - PreviousMouseRot.Yaw) >= 2.0f && FMath::Abs(CurrentMouseRot.Pitch - PreviousMouseRot.Pitch) >= 2.0f) {
+							NewCameraRot = FRotator(CurrentMouseRot.Pitch, CurrentMouseRot.Yaw, CurrentCameraRot.Roll);
+						}
+						else if (FMath::Abs(CurrentMouseRot.Yaw - PreviousMouseRot.Yaw) >= 2.0f && FMath::Abs(CurrentMouseRot.Pitch - PreviousMouseRot.Pitch) < 2.0f) {
+							// ONLY CHANGE YAW
+							NewCameraRot = FRotator(CurrentCameraRot.Pitch, CurrentMouseRot.Yaw, CurrentCameraRot.Roll);
+						}
+						else if (FMath::Abs(CurrentMouseRot.Yaw - PreviousMouseRot.Yaw) < 2.0f && FMath::Abs(CurrentMouseRot.Pitch - PreviousMouseRot.Pitch) >= 2.0f) {
+							// ONLY CHANGE PITCH
+							NewCameraRot = FRotator(CurrentMouseRot.Pitch, CurrentCameraRot.Yaw, CurrentCameraRot.Roll);
+						}
+
+						if ((NewCameraRot.Pitch > CurrentCameraRot.Pitch && CurrentCameraRot.Pitch < 15.0f) || (NewCameraRot.Pitch <= CurrentCameraRot.Pitch && CurrentCameraRot.Pitch > -15.0f)) {
+							Camera->SetWorldRotation(NewCameraRot);
+							UE_LOG(LogTemp, Warning, TEXT("Camera rotation: %f %f %f"), NewCameraRot.Pitch, NewCameraRot.Yaw, NewCameraRot.Roll);
+							// Reset gun rotation so that the direction that gun points in is controlled by cursor/camera
+							FRotator CurrentGunRot = Gun->GetActorRotation();
+							FRotator NewGunRot = FRotator(NewCameraRot.Pitch, CurrentGunRot.Yaw, CurrentGunRot.Roll);
+							Gun->SetActorRotation(NewGunRot);
+						}
 					}
 				}
 			}
@@ -103,6 +118,8 @@ void ABacon::Tick(float DeltaTime)
 			FVector2D ViewportSize = FVector2D(GEngine->GameViewport->Viewport->GetSizeXY());
 			FVector2D ViewportCenter = FVector2D(ViewportSize.X / 2, ViewportSize.Y / 2);
 			PlayerController->SetMouseLocation(ViewportCenter.X, ViewportCenter.Y);
+
+			PreviousMouseRot = CurrentMouseRot;
 		}
 	}
 	

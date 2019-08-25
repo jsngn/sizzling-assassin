@@ -139,4 +139,6 @@ protected:
 	// True when in game and unpaused
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Aiming")
 	bool bIsAiming;
+
+	FRotator PreviousMouseRot;
 };
