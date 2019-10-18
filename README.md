@@ -1,7 +1,7 @@
 # sizzling-assassin
 # Sizzling Assassin
 
-![Game Screenshot](https://imgur.com/a/FSZ5owj)
+![Game Screenshot](file:///C:/Users/Seth/Desktop/p8V2e4S.png)
 
 ## Description:
 
