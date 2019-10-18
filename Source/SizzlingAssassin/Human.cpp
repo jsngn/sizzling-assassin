@@ -37,8 +37,6 @@ void AHuman::BeginPlay()
 void AHuman::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	UE_LOG(LogTemp, Warning, TEXT("All waypoints detected: %i"), AllWaypoints.Num());
-	UE_LOG(LogTemp, Warning, TEXT("Accessible waypoints detected: %i"), AccessibleWaypoints.Num());
 }
 
 // Called to bind functionality to input
@@ -56,7 +54,6 @@ void AHuman::Move_Implementation() {
 			if (AWaypoint * PossibleTargetWaypoint = Cast<AWaypoint>(Waypoint)) {
 				if (PossibleTargetWaypoint->GetWaypointOrder() == CurrentWaypoint) {
 					HumanAIController->MoveToActor(PossibleTargetWaypoint);
-					UE_LOG(LogTemp, Warning, TEXT("Current waypoint number: %i"), CurrentWaypoint);
 					if (CurrentWaypoint == MinWaypoint) {
 						CurrentWaypoint = MaxWaypoint;
 					}

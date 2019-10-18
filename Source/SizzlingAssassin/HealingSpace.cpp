@@ -2,7 +2,6 @@
 
 
 #include "HealingSpace.h"
-#include "DrawDebugHelpers.h"
 #include "Bacon.h"
 #include "EnemySpawnVolume.h"
 
@@ -14,7 +13,6 @@ AHealingSpace::AHealingSpace() {
 void AHealingSpace::BeginPlay() {
 	Super::BeginPlay();
 	
-	DrawDebugBox(GetWorld(), GetActorLocation(), GetActorScale() * 100, FColor::Turquoise, true, -1, 0, 5);
 }
 
 // Handles bacon walking into sunlight area

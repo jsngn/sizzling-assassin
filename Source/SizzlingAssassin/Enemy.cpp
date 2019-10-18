@@ -7,7 +7,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "Bacon.h"
 #include "Engine.h"
-#include "DrawDebugHelpers.h"
 
 // Sets default values
 AEnemy::AEnemy()
@@ -54,14 +53,10 @@ void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AEnemy::Attacked(UPrimitiveComponent* HitComponent) {
 	if (HitComponent == NormalHitBox) {
-		UE_LOG(LogTemp, Warning, TEXT("Normal hit"));
 		CurrentHealth -= NormalDamage;
-		UE_LOG(LogTemp, Warning, TEXT("Health: %f"), CurrentHealth);
 	}
 	else if (HitComponent == CritHitBox) {
-		UE_LOG(LogTemp, Warning, TEXT("Crit hit"));
 		CurrentHealth -= CritDamage;
-		UE_LOG(LogTemp, Warning, TEXT("Health: %f"), CurrentHealth);
 	}
 
 	if (CurrentHealth <= 0.0f) {
@@ -83,13 +78,9 @@ void AEnemy::Eat_Implementation() {
 	FVector End = ((ForwardVector * MeleeRange) + Start);
 	FCollisionQueryParams CollisionParams;
 
-	DrawDebugLine(GetWorld(), Start, End, FColor::Red, true);
 
 	if (GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, CollisionParams)) {
 		if (OutHit.bBlockingHit) {
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("You are hitting: %s"), *OutHit.GetActor()->GetName()));
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Impact Point: %s"), *OutHit.ImpactPoint.ToString()));
-			GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, FString::Printf(TEXT("Normal Point: %s"), *OutHit.ImpactNormal.ToString()));
 
 			if (ABacon* HitBacon = Cast<ABacon>(OutHit.GetActor())) {
 				HitBacon->Eaten(); // Eats bacon if close enough to bacon

@@ -4,7 +4,6 @@
 #include "Bacon.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Engine.h"
-#include "DrawDebugHelpers.h"
 #include "GreaseGun.h"
 #include "TimerManager.h"
 #include "GreaseDrop.h"
@@ -198,16 +197,11 @@ void ABacon::OnFire_Implementation() {
 					FVector End = ((ForwardVector * ShootRange) + Start);
 					FCollisionQueryParams CollisionParams;
 
-					DrawDebugLine(GetWorld(), Start, End, FColor::Green, true);
 
 					if (GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, CollisionParams)) {
 						if (OutHit.bBlockingHit) {
-							GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("You are hitting: %s"), *OutHit.GetActor()->GetName()));
-							GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Purple, FString::Printf(TEXT("Impact Point: %s"), *OutHit.ImpactPoint.ToString()));
-							GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Blue, FString::Printf(TEXT("Normal Point: %s"), *OutHit.ImpactNormal.ToString()));
-
+						
 							if (AEnemy* HitEnemy = Cast<AEnemy>(OutHit.GetActor())) {
-								GEngine->AddOnScreenDebugMessage(-1, 1.f, FColor::Red, FString::Printf(TEXT("You are hitting component: %s"), *OutHit.GetComponent()->GetName()));
 								HitEnemy->Attacked(OutHit.GetComponent());
 							}
 							else {
