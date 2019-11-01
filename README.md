@@ -16,3 +16,25 @@ Make your way out of the apartment, down the stairs, and into the kitchen of a r
 the 'Golden Oven' that has everything a bacon could ever want: warmth and GREASE! Use your grease gun, which uses your own grease/health as ammo, to temporarily 
 distract the pests or damage them. You cannot damage humans with your grease and they can step on you, so steer clear! Lastly, you only have five bullets per level, 
 so use it wisely!
+
+## Features:
+
+Bacon:
+ - Holds the grease gun.
+ - Third person camera view.
+ - Walking speed is faster than the pests, but slower than the humans.
+ - Healing spaces are hidden around the map. The player can stand inside of them to heal, but they spawn enemies. 
+
+Human:
+ - Human AI that will stomp on you if you walk into their path.
+ - Have the same paths.
+ - Are an instakill if they step on you. 
+ - Can not be damaged by the player.
+
+Pests (Mice & Ants):
+ - Pest AI that follows you, and do melee damage VERY quickly if they get close enough.
+ - Are slower than the player's speed.
+ 
+Gun:
+ - Bullets attract enemies for a short while.
+ - Bullets do small amounts of damage to pests only.
