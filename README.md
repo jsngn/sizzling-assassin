@@ -36,5 +36,5 @@ Pests (Mice & Ants):
  - Are slower than the player's speed.
  
 Gun:
- - Bullets attract enemies for a short while.
  - Bullets do small amounts of damage to pests only.
+ - Bullets can distract enemies for a short while if not used to damage pests.
